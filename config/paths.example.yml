@@ -74,7 +74,7 @@ backup_location: "E:/Backups/comic_migration_backup"
 # ==============================================================================
 # Manual overrides for content type detection
 # Useful when auto-detection fails or for mixed-content directories
-content_type_overrides:
+content_type_overrides: {}
   # Format: "source_path": "content_type"
   # Example:
   # "C:/Comics/Western/Manga-like-Comics": "western"

@@ -466,23 +466,38 @@ def run_safety_checks(config: AppConfig) -> Tuple[bool, List[SafetyCheckResult]]
     passed_checks = sum(1 for r in results if r.passed)
     critical_failed = sum(1 for r in critical_results if not r.passed)
     
-    # Log summary
-    summary_level = "INFO" if all_critical_passed else "ERROR"
-    logger.log(
-        getattr(logger, summary_level.lower()).__self__.level,
-        f"Safety checks complete: {passed_checks}/{total_checks} passed",
-        extra={
-            "phase": "safety_checks",
-            "operation": "summary",
-            "metadata": {
-                "total_checks": total_checks,
-                "passed": passed_checks,
-                "failed": total_checks - passed_checks,
-                "critical_failed": critical_failed,
-                "overall_passed": all_critical_passed,
+    # Log summary at INFO level if all critical checks passed, ERROR level otherwise
+    # This ensures that failed critical checks are captured in error logs for monitoring
+    if all_critical_passed:
+        logger.info(
+            f"Safety checks complete: {passed_checks}/{total_checks} passed",
+            extra={
+                "phase": "safety_checks",
+                "operation": "summary",
+                "metadata": {
+                    "total_checks": total_checks,
+                    "passed": passed_checks,
+                    "failed": total_checks - passed_checks,
+                    "critical_failed": critical_failed,
+                    "overall_passed": all_critical_passed,
+                }
             }
-        }
-    )
+        )
+    else:
+        logger.error(
+            f"Safety checks complete: {passed_checks}/{total_checks} passed",
+            extra={
+                "phase": "safety_checks",
+                "operation": "summary",
+                "metadata": {
+                    "total_checks": total_checks,
+                    "passed": passed_checks,
+                    "failed": total_checks - passed_checks,
+                    "critical_failed": critical_failed,
+                    "overall_passed": all_critical_passed,
+                }
+            }
+        )
     
     return all_critical_passed, results
 

@@ -26,7 +26,7 @@ Usage:
 """
 
 import functools
-from typing import Any, Callable, Dict, Optional, TypeVar, cast
+from typing import Any, Callable, Dict, Optional, TypeVar, cast, List
 from pathlib import Path
 from dataclasses import dataclass, field
 
@@ -224,7 +224,7 @@ class DryRunContext:
         self.operation_name = operation_name
         self.phase = phase
         self.should_execute = not config.environment.dry_run
-        self.actions_logged: list[str] = []
+        self.actions_logged: List[str] = []  # Python 3.8 compatible typing
     
     def __enter__(self) -> "DryRunContext":
         """Enter the context."""

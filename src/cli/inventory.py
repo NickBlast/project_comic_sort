@@ -18,7 +18,7 @@ Usage:
 import sys
 import argparse
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 
 from src.core.config import load_config, AppConfig
 from src.core.logger import setup_logging, get_logger
@@ -210,7 +210,7 @@ For more information, see docs/README.md
     
     return parser
 
-def main(argv: Optional[list[str]] = None) -> int:
+def main(argv: Optional[List[str]] = None) -> int:
     """
     Main entry point for inventory CLI.
     
@@ -220,6 +220,8 @@ def main(argv: Optional[list[str]] = None) -> int:
     3. Initializes logging
     4. Runs safety checks (unless skipped)
     5. Dispatches to appropriate command handler
+    
+    Note: Uses List[str] instead of list[str] for Python 3.8 compatibility.
     
     Args:
         argv: Command-line arguments (default: sys.argv[1:])

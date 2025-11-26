@@ -1,0 +1,179 @@
+# Comic Collection Migration & Normalization - Main Configuration Template
+# Copy this to config.yml and customize for your environment
+# Never commit config.yml with real credentials to version control
+
+# ==============================================================================
+# ENVIRONMENT SETTINGS
+# ==============================================================================
+environment:
+  # Operating mode: ALWAYS defaults to dry-run for safety
+  # Set to false only after reviewing dry-run reports
+  dry_run: true
+  
+  # Profile name for this configuration (dev, staging, production)
+  profile: "development"
+  
+  # Python version requirement (automatically checked on startup)
+  min_python_version: "3.8"
+
+# ==============================================================================
+# LOGGING CONFIGURATION
+# ==============================================================================
+logging:
+  # Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  level: "INFO"
+  
+  # Log file paths (relative to project root)
+  operations_log: "logs/operations_{timestamp}.log"
+  debug_log: "logs/debug_{timestamp}.log"
+  errors_log: "logs/errors_{timestamp}.log"
+  
+  # Enable console output during development
+  console_output: true
+  
+  # Log rotation settings
+  max_bytes: 10485760  # 10MB
+  backup_count: 5
+  
+  # JSON formatting for structured logs
+  json_format: true
+
+# ==============================================================================
+# SAFETY SETTINGS
+# ==============================================================================
+safety:
+  # Require backup before any destructive operations
+  require_backup: true
+  
+  # Minimum free disk space (bytes) before migration
+  min_free_space_bytes: 107374182400  # 100GB
+  
+  # Operation timeout (seconds) for individual file operations
+  operation_timeout: 300
+  
+  # Verify file integrity after copy
+  verify_copy_integrity: true
+  
+  # Maximum retries for transient failures
+  max_retries: 3
+
+# ==============================================================================
+# METADATA PROVIDERS
+# ==============================================================================
+metadata_providers:
+  # ComicVine for Western comics
+  comicvine:
+    enabled: true
+    api_key: "${COMICVINE_API_KEY}"  # Set via environment variable
+    rate_limit_per_second: 1
+    timeout: 30
+  
+  # AniList for manga
+  anilist:
+    enabled: true
+    timeout: 30
+  
+  # MangaDex for manga
+  mangadex:
+    enabled: true
+    timeout: 30
+  
+  # LANraragi for hentai/doujin
+  lanraragi:
+    enabled: false  # Enable if you have LANraragi running
+    url: "${LANRARAGI_URL}"  # e.g., http://localhost:3000
+    api_key: "${LANRARAGI_API_KEY}"
+    timeout: 10
+    required: false  # If true, exits if LANraragi unavailable
+
+# ==============================================================================
+# CONFIDENCE LEVEL SETTINGS
+# ==============================================================================
+confidence:
+  # Thresholds for fuzzy matching scores (0.0 to 1.0)
+  high_confidence_threshold: 0.9
+  medium_confidence_threshold: 0.7
+  
+  # Whether to separate best-guess (medium confidence) items
+  best_guess_separate_folder: false
+  
+  # Auto-approve high confidence migrations (when not in dry-run)
+  auto_approve_high_confidence: true
+
+# ==============================================================================
+# NAMING PATTERNS
+# ==============================================================================
+naming:
+  # Western comics naming template
+  # Available variables: {publisher}, {series}, {start_year}, {year}, {issue}, {date}
+  western_format: "{series} ({year}) #{issue:03d} ({date})"
+  western_folder_format: "{publisher}/{series} ({start_year})"
+  
+  # Manga naming template
+  # Available variables: {series}, {volume}, {chapter}
+  manga_volume_format: "{series} v{volume:02d}"
+  manga_chapter_format: "{series} c{chapter:03d}"
+  manga_folder_format: "{series}"
+  
+  # Hentai/doujin naming template
+  # Available variables: {circle}, {title}, {id}, {language}, {source}
+  hentai_oneshot_format: "({id}) - {title} ({language}) [{source}]"
+  hentai_series_format: "{title} v{volume:02d}"
+  hentai_folder_format: "[{circle}]/{title}"
+
+# ==============================================================================
+# KOMGA INTEGRATION
+# ==============================================================================
+komga:
+  # Komga server URL and credentials
+  url: "${KOMGA_URL}"  # e.g., http://localhost:8080
+  api_key: "${KOMGA_API_KEY}"
+  
+  # Library IDs (get from Komga UI)
+  comics_library_id: ""
+  manga_library_id: ""
+  hentai_library_id: ""
+  
+  # Trigger scan after migration
+  auto_scan: true
+
+# ==============================================================================
+# MYLAR3 INTEGRATION (OPTIONAL)
+# ==============================================================================
+mylar3:
+  # Mylar3 server URL and credentials
+  enabled: false
+  url: "${MYLAR3_URL}"  # e.g., http://localhost:8090
+  api_key: "${MYLAR3_API_KEY}"
+  
+  # Update Mylar3 database with new paths
+  update_database: false
+
+# ==============================================================================
+# PERFORMANCE SETTINGS
+# ==============================================================================
+performance:
+  # Maximum parallel workers for different operations
+  max_api_workers: 5  # Respect rate limits
+  max_hash_workers: 4  # CPU-bound operations
+  max_copy_workers: 2  # I/O-bound operations
+  
+  # Batch size for processing
+  batch_size: 100
+  
+  # Enable progress bars
+  show_progress: true
+
+# ==============================================================================
+# OPERATIONS
+# ==============================================================================
+operations:
+  # Convert CBR to CBZ during migration
+  convert_cbr_to_cbz: false
+  
+  # Set file permissions after copy (Unix-like systems)
+  # Format: octal string like "0644" or null to preserve original
+  set_permissions: null
+  
+  # Preserve original file timestamps
+  preserve_timestamps: true

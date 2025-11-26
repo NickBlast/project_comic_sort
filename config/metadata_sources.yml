@@ -1,0 +1,141 @@
+# Metadata Sources API Configuration Template
+# This file contains API endpoints and credential placeholders
+# NEVER commit this file with real credentials to version control
+# Use environment variables or .env file for actual credentials
+
+# ==============================================================================
+# COMICVINE (Western Comics)
+# ==============================================================================
+comicvine:
+  # API endpoint
+  api_base_url: "https://comicvine.gamespot.com/api"
+  
+  # API key - MUST be set via environment variable
+  # Get your key from: https://comicvine.gamespot.com/api/
+  api_key: "${COMICVINE_API_KEY}"
+  
+  # Rate limiting (requests per second)
+  rate_limit: 1
+  
+  # Request timeout (seconds)
+  timeout: 30
+  
+  # User agent for API requests
+  user_agent: "ComicMigrationTool/0.1.0"
+
+# ==============================================================================
+# ANILIST (Manga)
+# ==============================================================================
+anilist:
+  # GraphQL endpoint
+  api_url: "https://graphql.anilist.co"
+  
+  # No API key required for public queries
+  # Optional: OAuth2 for authenticated requests (higher rate limits)
+  # client_id: "${ANILIST_CLIENT_ID}"
+  # client_secret: "${ANILIST_CLIENT_SECRET}"
+  
+  # Request timeout (seconds)
+  timeout: 30
+  
+  # Rate limiting (requests per minute)
+  rate_limit: 90
+
+# ==============================================================================
+# MANGADEX (Manga)
+# ==============================================================================
+mangadex:
+  # API endpoint (v5)
+  api_base_url: "https://api.mangadex.org"
+  
+  # No API key required for public endpoints
+  # Rate limiting is handled by MangaDex (5 requests per second)
+  
+  # Request timeout (seconds)
+  timeout: 30
+
+# ==============================================================================
+# LANRARAGI (Hentai/Doujin)
+# ==============================================================================
+lanraragi:
+  # LANraragi server URL
+  # Should point to your local or remote LANraragi instance
+  url: "${LANRARAGI_URL}"  # e.g., http://localhost:3000
+  
+  # API key for authentication
+  # Get from LANraragi settings
+  api_key: "${LANRARAGI_API_KEY}"
+  
+  # Request timeout (seconds)
+  timeout: 10
+  
+  # Connection retry settings
+  max_retries: 3
+  retry_delay: 2
+
+# ==============================================================================
+# E-HENTAI / EXHENTAI (Hentai/Doujin)
+# ==============================================================================
+e_hentai:
+  # Base URLs
+  api_url: "https://api.e-hentai.org/api.php"
+  gallery_url: "https://e-hentai.org"
+  
+  # Cookie-based authentication (required for ExHentai)
+  # These should be set via environment variables
+  # Get from browser after logging in
+  ipb_member_id: "${EH_IPB_MEMBER_ID}"
+  ipb_pass_hash: "${EH_IPB_PASS_HASH}"
+  igneous: "${EH_IGNEOUS}"  # Required for ExHentai access
+  
+  # Request timeout (seconds)
+  timeout: 30
+  
+  # Rate limiting (be conservative to avoid IP bans)
+  rate_limit: 0.5  # requests per second
+
+# ==============================================================================
+# NHENTAI (Hentai/Doujin)
+# ==============================================================================
+nhentai:
+  # Note: nhentai has no official API
+  # This section is for potential scraping/parsing configuration
+  
+  # Gallery URL pattern for ID-based lookups
+  gallery_url_pattern: "https://nhentai.net/g/{id}/"
+  
+  # API endpoint (unofficial/community)
+  # Use with caution - may break without notice
+  api_url: "https://nhentai.net/api/gallery/{id}"
+  
+  # Request timeout (seconds)
+  timeout: 30
+  
+  # Very conservative rate limiting to avoid bans
+  rate_limit: 0.2  # requests per second
+  
+  # User agent for web requests
+  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+
+# ==============================================================================
+# MYCOMICLIST (Western Comics - Alternative)
+# ==============================================================================
+# Placeholder for future integration
+mycomiclist:
+  enabled: false
+  api_url: "https://mycomiclist.com/api"
+  # Additional configuration TBD
+
+# ==============================================================================
+# GRAND COMICS DATABASE (Western Comics - Free Alternative)
+# ==============================================================================
+gcd:
+  # API endpoint
+  api_base_url: "https://www.comics.org/api"
+  
+  # No API key required
+  # Request timeout (seconds)
+  timeout: 30
+  
+  # Rate limiting (be respectful)
+  rate_limit: 1

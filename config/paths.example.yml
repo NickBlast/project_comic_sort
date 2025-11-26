@@ -1,0 +1,81 @@
+# Path Configuration Template
+# Copy this to paths.yml and customize for your environment
+# This file isolates path configuration for easy environment-specific overrides
+
+# ==============================================================================
+# SOURCE LIBRARIES
+# ==============================================================================
+# List all existing library paths to scan and process
+# Use absolute paths for clarity and reliability
+source_libraries:
+  # Example Western comics source
+  - path: "C:/Comics/Western"
+    content_type: "western"  # western, manga, or hentai
+    enabled: true
+  
+  # Example manga source
+  - path: "C:/Comics/Manga"
+    content_type: "manga"
+    enabled: true
+  
+  # Example hentai/doujin source
+  - path: "C:/Comics/Hentai"
+    content_type: "hentai"
+    enabled: false  # Disabled by default
+  
+  # Can also use environment variables
+  # - path: "${COMICS_SOURCE_PATH}"
+  #   content_type: "western"
+  #   enabled: true
+
+# ==============================================================================
+# TARGET LIBRARY ROOTS
+# ==============================================================================
+# Destination paths where organized files will be migrated
+# These should be on filesystem(s) with sufficient free space
+target_roots:
+  # Western comics target (for Komga/Mylar3)
+  western: "C:/Media/Comics"
+  
+  # Manga target (for Komga)
+  manga: "C:/Media/Manga"
+  
+  # Hentai/doujin target (for Komga/LANraragi)
+  hentai: "C:/Media/H-Manga"
+  
+  # Can also use environment variables
+  # western: "${TARGET_COMICS_PATH}"
+  # manga: "${TARGET_MANGA_PATH}"
+  # hentai: "${TARGET_HENTAI_PATH}"
+
+# ==============================================================================
+# WORKSPACE AND TEMPORARY FILES
+# ==============================================================================
+# Temporary workspace for intermediate processing
+# Should be on fast storage (SSD preferred) with sufficient space
+temp_workspace: "C:/Temp/comic_migration_workspace"
+
+# Alternative: Use system temp directory
+# temp_workspace: "${TEMP}/comic_migration_workspace"
+
+# ==============================================================================
+# BACKUP LOCATION (OPTIONAL)
+# ==============================================================================
+# Where to store backups before destructive operations
+# Should be on separate physical storage for true backup safety
+# Set to null or empty to skip automated backups (not recommended)
+backup_location: "E:/Backups/comic_migration_backup"
+
+# Alternative: No backup (USE WITH CAUTION)
+# backup_location: null
+
+# ==============================================================================
+# CONTENT TYPE OVERRIDES
+# ==============================================================================
+# Manual overrides for content type detection
+# Useful when auto-detection fails or for mixed-content directories
+content_type_overrides:
+  # Format: "source_path": "content_type"
+  # Example:
+  # "C:/Comics/Western/Manga-like-Comics": "western"
+  # "C:/Comics/Manga/American-Style": "manga"

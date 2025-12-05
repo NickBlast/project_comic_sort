@@ -5,329 +5,221 @@ This module provides command-line interface for:
 - Scanning source libraries and generating inventories
 - Verifying backups against original inventories
 - Running safety checks before operations
-
-Phase 0: Basic skeleton with safety checks integration
-Phase 1: Full implementation of scan and verify commands (TODO)
-
-Usage:
-    python -m src.cli.inventory --help
-    python -m src.cli.inventory scan --source /path/to/comics
-    python -m src.cli.inventory verify --original inventory.json --backup /path
 """
 
 import sys
 import argparse
+import json
+import time
 from pathlib import Path
 from typing import Optional, List
+
+from rich.console import Console
+from rich.table import Table
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
 
 from src.core.config import load_config, AppConfig
 from src.core.logger import setup_logging, get_logger
 from src.operations.safety_checks import run_safety_checks, print_safety_check_results
+from src.operations.scanner import scan_library
+from src.operations.verifier import verify_backup
 
 logger = get_logger(__name__)
+console = Console()
 
 # ==============================================================================
-# COMMAND HANDLERS (STUBS FOR PHASE 1)
+# COMMAND HANDLERS
 # ==============================================================================
 
 def cmd_scan(args: argparse.Namespace, config: AppConfig) -> int:
     """
     Scan source libraries and generate inventory.
-    
-    TODO Phase 1: Implement full scanning logic
-    - Recursively discover comic files (.cbz, .cbr, .cb7, .pdf)
-    - Calculate SHA256 hash for each file
-    - Collect file metadata (size, modified time)
-    - Output to JSON inventory file
-    
-    Args:
-        args: Parsed command-line arguments
-        config: Application configuration
-        
-    Returns:
-        Exit code (0 for success, non-zero for failure)
     """
-    logger.info(
-        "Scan command invoked (STUB)",
-        extra={
-            "phase": "inventory",
-            "operation": "scan",
-            "metadata": {
-                "source": args.source if args.source else "from config",
-                "output": args.output,
-            }
-        }
-    )
+    source_path = args.source
+    output_path = args.output
     
-    print("\n" + "="*70)
-    print("INVENTORY SCAN (Phase 1 - NOT YET IMPLEMENTED)")
-    print("="*70)
-    print("\nThis command will be implemented in Phase 1.")
-    print("\nPlanned functionality:")
-    print("  - Recursively scan source directories for comic files")
-    print("  - Calculate SHA256 hashes for integrity verification")
-    print("  - Generate JSON inventory with file metadata")
-    print("  - Support for CBZ, CBR, CB7, and PDF formats")
-    print("\n" + "="*70 + "\n")
+    if not source_path:
+        # If no source provided, use the first enabled source from config
+        # In a real scenario, we might want to scan all sources
+        enabled_sources = [s for s in config.paths.source_libraries if s.enabled]
+        if not enabled_sources:
+            console.print("[bold red]No enabled source libraries found in config.[/bold red]")
+            return 1
+        source_path = Path(enabled_sources[0].path)
+        console.print(f"[yellow]No source specified, using first enabled source: {source_path}[/yellow]")
     
-    return 0
+    console.print(f"\n[bold blue]Starting Inventory Scan[/bold blue]")
+    console.print(f"Source: [cyan]{source_path}[/cyan]")
+    console.print(f"Output: [cyan]{output_path}[/cyan]")
+    
+    start_time = time.time()
+    
+    try:
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            transient=True
+        ) as progress:
+            task = progress.add_task("Scanning...", total=None)
+            
+            def progress_callback(path: str):
+                progress.update(task, description=f"Scanning: {Path(path).name}")
+            
+            inventory = scan_library(
+                source_path, 
+                progress_callback=progress_callback
+            )
+            
+        duration = time.time() - start_time
+        
+        # Save inventory
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(output_path, 'w', encoding='utf-8') as f:
+            json.dump(inventory, f, indent=2)
+            
+        # Print summary
+        table = Table(title="Scan Summary")
+        table.add_column("Metric", style="cyan")
+        table.add_column("Value", style="green")
+        
+        table.add_row("Total Files", str(len(inventory)))
+        table.add_row("Duration", f"{duration:.2f}s")
+        table.add_row("Output File", str(output_path))
+        
+        console.print(table)
+        
+        logger.info(f"Scan complete. Found {len(inventory)} files in {duration:.2f}s")
+        return 0
+        
+    except Exception as e:
+        console.print(f"[bold red]Error during scan: {e}[/bold red]")
+        logger.error(f"Scan failed: {e}", exc_info=True)
+        return 1
 
 def cmd_verify(args: argparse.Namespace, config: AppConfig) -> int:
     """
     Verify backup against original inventory.
-    
-    TODO Phase 1: Implement verification logic
-    - Load original inventory JSON
-    - Scan backup location
-    - Compare file lists and hashes
-    - Report any missing or corrupted files
-    
-    Args:
-        args: Parsed command-line arguments
-        config: Application configuration
-        
-    Returns:
-        Exit code (0 for success, non-zero for failure)
     """
-    logger.info(
-        "Verify command invoked (STUB)",
-        extra={
-            "phase": "inventory",
-            "operation": "verify",
-            "metadata": {
-                "original": args.original,
-                "backup": args.backup,
-            }
-        }
-    )
+    original_path = args.original
+    backup_path = args.backup
     
-    print("\n" + "="*70)
-    print("BACKUP VERIFICATION (Phase 1 - NOT YET IMPLEMENTED)")
-    print("="*70)
-    print("\nThis command will be implemented in Phase 1.")
-    print("\nPlanned functionality:")
-    print("  - Load original pre-migration inventory")
-    print("  - Re-scan backup location")
-    print("  - Compare file counts and SHA256 hashes")
-    print("  - Report missing or corrupted files")
-    print("  - Generate diff report")
-    print("\n" + "="*70 + "\n")
+    console.print(f"\n[bold blue]Starting Backup Verification[/bold blue]")
+    console.print(f"Original Inventory: [cyan]{original_path}[/cyan]")
+    console.print(f"Backup Location: [cyan]{backup_path}[/cyan]")
     
-    return 0
+    try:
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            transient=True
+        ) as progress:
+            progress.add_task("Verifying...", total=None)
+            results = verify_backup(original_path, backup_path)
+            
+        # Print results
+        table = Table(title="Verification Results")
+        table.add_column("Category", style="cyan")
+        table.add_column("Count", style="magenta")
+        table.add_column("Status", style="bold")
+        
+        match_count = len(results["matches"])
+        missing_count = len(results["missing"])
+        extra_count = len(results["extra"])
+        
+        table.add_row("Matches", str(match_count), "[green]OK[/green]")
+        table.add_row("Missing", str(missing_count), "[red]FAIL[/red]" if missing_count > 0 else "[green]OK[/green]")
+        table.add_row("Extra", str(extra_count), "[yellow]WARN[/yellow]" if extra_count > 0 else "[green]OK[/green]")
+        
+        console.print(table)
+        
+        if missing_count > 0:
+            console.print("\n[bold red]Missing Files:[/bold red]")
+            for item in results["missing"][:10]:
+                console.print(f"  - {item['rel_path']}")
+            if missing_count > 10:
+                console.print(f"  ... and {missing_count - 10} more")
+                
+        if extra_count > 0:
+            console.print("\n[bold yellow]Extra Files (in backup but not original):[/bold yellow]")
+            for item in results["extra"][:10]:
+                console.print(f"  - {item['rel_path']}")
+            if extra_count > 10:
+                console.print(f"  ... and {extra_count - 10} more")
+        
+        return 1 if missing_count > 0 else 0
+        
+    except Exception as e:
+        console.print(f"[bold red]Error during verification: {e}[/bold red]")
+        logger.error(f"Verification failed: {e}", exc_info=True)
+        return 1
 
 # ==============================================================================
 # CLI SETUP AND MAIN
 # ==============================================================================
 
 def create_parser() -> argparse.ArgumentParser:
-    """
-    Create argument parser for inventory CLI.
-    
-    Returns:
-        Configured ArgumentParser instance
-    """
+    """Create argument parser for inventory CLI."""
     parser = argparse.ArgumentParser(
         prog="comic-inventory",
         description="Comic library inventory and backup verification tool (Phase 1)",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  # Run safety checks only
-  python -m src.cli.inventory --safety-checks-only
-  
-  # Scan source library (Phase 1 - TODO)
-  python -m src.cli.inventory scan --source /path/to/comics --output inventory.json
-  
-  # Verify backup (Phase 1 - TODO)
-  python -m src.cli.inventory verify --original inventory.json --backup /path/to/backup
-
-For more information, see docs/README.md
-        """
+        formatter_class=argparse.RawDescriptionHelpFormatter
     )
     
     # Global options
-    parser.add_argument(
-        "--config",
-        type=Path,
-        help="Path to configuration file (default: config/example_config.yml)"
-    )
-    
-    parser.add_argument(
-        "--paths-config",
-        type=Path,
-        help="Path to paths configuration file (default: config/paths.example.yml)"
-    )
-    
-    parser.add_argument(
-        "--safety-checks-only",
-        action="store_true",
-        help="Run safety checks only and exit"
-    )
-    
-    parser.add_argument(
-        "--skip-safety-checks",
-        action="store_true",
-        help="Skip safety checks (NOT RECOMMENDED)"
-    )
+    parser.add_argument("--config", type=Path, help="Path to configuration file")
+    parser.add_argument("--paths-config", type=Path, help="Path to paths configuration file")
+    parser.add_argument("--safety-checks-only", action="store_true", help="Run safety checks only and exit")
+    parser.add_argument("--skip-safety-checks", action="store_true", help="Skip safety checks")
     
     # Subcommands
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
     
     # Scan command
-    scan_parser = subparsers.add_parser(
-        "scan",
-        help="Scan source libraries and generate inventory"
-    )
-    scan_parser.add_argument(
-        "--source",
-        type=Path,
-        help="Source library path to scan (overrides config)"
-    )
-    scan_parser.add_argument(
-        "--output",
-        type=Path,
-        default=Path("output/inventories/inventory.json"),
-        help="Output path for inventory JSON file"
-    )
+    scan_parser = subparsers.add_parser("scan", help="Scan source libraries and generate inventory")
+    scan_parser.add_argument("--source", type=Path, help="Source library path to scan")
+    scan_parser.add_argument("--output", type=Path, default=Path("output/inventories/inventory.json"), help="Output path for inventory JSON")
     
     # Verify command
-    verify_parser = subparsers.add_parser(
-        "verify",
-        help="Verify backup against original inventory"
-    )
-    verify_parser.add_argument(
-        "--original",
-        type=Path,
-        required=True,
-        help="Path to original inventory JSON file"
-    )
-    verify_parser.add_argument(
-        "--backup",
-        type=Path,
-        required=True,
-        help="Path to backup location to verify"
-    )
+    verify_parser = subparsers.add_parser("verify", help="Verify backup against original inventory")
+    verify_parser.add_argument("--original", type=Path, required=True, help="Path to original inventory JSON")
+    verify_parser.add_argument("--backup", type=Path, required=True, help="Path to backup location")
     
     return parser
 
 def main(argv: Optional[List[str]] = None) -> int:
-    """
-    Main entry point for inventory CLI.
-    
-    This function:
-    1. Parses command-line arguments
-    2. Loads configuration
-    3. Initializes logging
-    4. Runs safety checks (unless skipped)
-    5. Dispatches to appropriate command handler
-    
-    Note: Uses List[str] instead of list[str] for Python 3.8 compatibility.
-    
-    Args:
-        argv: Command-line arguments (default: sys.argv[1:])
-        
-    Returns:
-        Exit code (0 for success, non-zero for failure)
-    """
+    """Main entry point."""
     parser = create_parser()
     args = parser.parse_args(argv)
     
     try:
-        # Load configuration
-        config = load_config(
-            config_path=args.config,
-            paths_config_path=args.paths_config
-        )
-        
-        # Initialize logging
+        config = load_config(args.config, args.paths_config)
         setup_logging(config.logging)
         
-        logger.info(
-            "Inventory CLI started",
-            extra={
-                "phase": "bootstrap",
-                "operation": "cli_startup",
-                "metadata": {
-                    "command": args.command,
-                    "dry_run": config.environment.dry_run,
-                }
-            }
-        )
-        
-        # Display mode warning
         if config.environment.dry_run:
-            print("\n⚠️  DRY-RUN MODE ENABLED - No files will be modified\n")
-        else:
-            print("\n⚠️  APPLY MODE - Files WILL be modified\n")
+            console.print("[bold yellow]⚠️  DRY-RUN MODE ENABLED[/bold yellow]")
         
-        # Run safety checks unless explicitly skipped
         if not args.skip_safety_checks:
-            print("Running safety checks...\n")
-            
+            console.print("Running safety checks...")
             passed, results = run_safety_checks(config)
             print_safety_check_results(results)
             
             if not passed:
-                logger.error(
-                    "Safety checks failed - cannot proceed",
-                    extra={
-                        "phase": "safety_checks",
-                        "operation": "validation",
-                        "status": "failed",
-                    }
-                )
+                console.print("[bold red]Safety checks failed - cannot proceed[/bold red]")
                 return 1
-            
-            # If only running safety checks, exit now
+                
             if args.safety_checks_only:
-                print("Safety checks passed. Exiting (--safety-checks-only)\n")
                 return 0
-        else:
-            print("⚠️  WARNING: Safety checks skipped (NOT RECOMMENDED)\n")
         
-        # Dispatch to command handler
         if args.command == "scan":
             return cmd_scan(args, config)
         elif args.command == "verify":
             return cmd_verify(args, config)
         else:
-            # No command specified - show help
             parser.print_help()
             return 0
-        
-    except FileNotFoundError as e:
-        print(f"\n❌ Error: {e}", file=sys.stderr)
-        print("Ensure configuration files exist:", file=sys.stderr)
-        print("  - config/example_config.yml", file=sys.stderr)
-        print("  - config/paths.example.yml", file=sys.stderr)
-        return 1
-    
-    except ValueError as e:
-        print(f"\n❌ Configuration Error: {e}", file=sys.stderr)
-        return 1
-    
-    except KeyboardInterrupt:
-        print("\n\n⚠️  Operation cancelled by user", file=sys.stderr)
-        logger.warning(
-            "Operation cancelled by user (Ctrl+C)",
-            extra={
-                "phase": "inventory",
-                "operation": "user_cancel",
-            }
-        )
-        return 130  # Standard exit code for SIGINT
-    
+            
     except Exception as e:
-        print(f"\n❌ Unexpected error: {e}", file=sys.stderr)
-        logger.error(
-            f"Unexpected error in inventory CLI: {e}",
-            extra={
-                "phase": "inventory",
-                "operation": "cli_error",
-                "error": str(e),
-            },
-            exc_info=True
-        )
+        console.print(f"[bold red]Unexpected error: {e}[/bold red]")
         return 1
 
 if __name__ == "__main__":

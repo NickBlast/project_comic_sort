@@ -26,3 +26,6 @@ tqdm>=4.66.0
 
 # Retry logic for API calls
 tenacity>=8.2.0
+
+# CLI improvements
+rich>=13.0.0
